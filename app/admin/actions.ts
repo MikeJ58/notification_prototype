@@ -1,19 +1,31 @@
 // /app/admin/actions.ts
 
 import { toast, ToasterToast } from '@/components/ui/use-toast';
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export const createNotification = async (formData: FormData) => {
   'use server';
-  
+
   const userId = Number(formData.get('userId'));
   const message = formData.get('message') as string | null;
 
+  if (!userId || isNaN(userId)) {
+    throw new Error('Invalid user ID');
+  }
+
   if (message === null) {
     throw new Error('Message is required');
+  }
+
+  // Check if the user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new Error(`User with ID ${userId} does not exist`);
   }
 
   return await prisma.notification.create({
@@ -21,10 +33,7 @@ export const createNotification = async (formData: FormData) => {
       userId,
       message,
     },
-
   });
-  
-  
 };
 
 export const createDummyUsers = async () => {
